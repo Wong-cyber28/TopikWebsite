@@ -19,16 +19,27 @@ def is_valid_korean(text, min_ratio=0.3):
     korean_chars = len(re.findall(r'[\uac00-\ud7a3]', text))
     return (korean_chars / total_chars) >= min_ratio
 
-def run_grammar_agent(user_text):
-    sys_prompt = """
-    You are an advanced TOPIK evaluator grading the 'Language Use' section.
-    Check the provided Korean text for spelling, spacing, and grammar errors.
-    Convert the text strictly to the advanced written form (한다/ㄴ다/다).
+def run_grammar_agent(user_text, feedback_lang="中文"):
+    sys_prompt = f"""
+    You are a STRICT TOPIK evaluator grading the 'Language Use' section.
+    Check for spelling, spacing, and grammar errors. Convert to 한다/ㄴ다/다 form.
+    
+    [IMPORTANT] 
+    1. The 'corrected_text' must be strictly in Korean.
+    2. STICK TO {feedback_lang}: All 'reason' fields in grammar_errors MUST be written in {feedback_lang}. 
+    Do not use Korean for explanations unless specifically quoting the text.
+    
+    CRITICAL SCORING RUBRIC (Max 20):
+    - Start at 20. Deduct 1-2 points per basic grammar/spacing error.
+    - Deduct 5 points immediately if speech levels (해요/습니다) are mixed.
+    - 🚨 HOLISTIC PENALTY: If the text relies heavily on elementary vocabulary (e.g., 많이, 먹다, 좋다) or lacks complex sentence structures, CAP the score at 10/20 maximum.
+    
     Output in JSON format with:
     - "corrected_text": The fully corrected Korean text.
     - "grammar_errors": A list containing "original", "correction", and "reason".
-    - "language_score": A score out of 20.
+    - "language_score": The final strict score out of 20.
     """
+    
     response = client.models.generate_content(
         model='gemini-3.5-flash',
         contents=user_text,
@@ -40,32 +51,43 @@ def run_grammar_agent(user_text):
     )
     return json.loads(response.text)
 
-def run_logic_agent(corrected_text, is_full_essay, essay_topic=""):
-    topic_instruction = f"The essay topic is: '{essay_topic}'." if essay_topic else "No specific topic provided; evaluate general logical flow."
+def run_logic_agent(corrected_text, is_full_essay, exam_prompt="", feedback_lang="中文"):
+    topic_instruction = f"The exact exam prompt (including specific questions to answer) is: '{exam_prompt}'." if exam_prompt else "No specific exam prompt provided."
     
+    language_constraint = f"""
+    [STRICT LANGUAGE RULE]
+    - You must provide all 'overall_feedback' and 'reason' in 'vocabulary_upgrades' strictly in {feedback_lang}.
+    - Even if the input is Korean, your explanation MUST be in {feedback_lang}.
+    """
+
     if is_full_essay:
         sys_prompt = f"""
-        You are a STRICT senior professor evaluating a COMPLETE TOPIK II Question 54 essay.
+        You are a strict professor evaluating a COMPLETE TOPIK II Q54 essay based on 'All About TOPIK Writing' criteria[cite: 1].
         {topic_instruction}
+        {language_constraint}
         
-        CRITICAL SCORING RULES:
-        1. Content (Max 15): Does it deeply address the topic? If it completely misses the provided topic, CAP at 3/15.
-        2. Structure (Max 15): MUST have a clear Introduction, Body, and Conclusion.
-        3. 🚨 ANTI-CHEAT: If the essay relies on semantic repetition to meet length, CAP structure_score at 3/15 and content_score at 4/15.
+        [CRITICAL SCORING RUBRIC]
+        - Content (Max 15): 🚨 MANDATORY CHECK: Did the writer explicitly answer EVERY specific guiding question provided in the exam prompt? If any question is ignored, heavily penalize the content_score.
+        - Structure (Max 15): Paragraph cohesion and logical flow[cite: 1].
+        - Use 50-point scale for full essays[cite: 1].
         
         Output in JSON format with:
         - "content_score": A strict score out of 15.
         - "structure_score": A strict score out of 15.
-        - "overall_feedback": Harsh, constructive feedback on depth, topic fulfillment, and logic.
+        - "overall_feedback": Harsh, constructive feedback. Explicitly state if they missed answering any specific questions from the prompt.
         - "vocabulary_upgrades": A list containing "original", "advanced", and "reason".
         """
     else:
         sys_prompt = f"""
         You are evaluating a SHORT SNIPPET of a TOPIK II Q54 essay.
         {topic_instruction}
-        DO NOT provide content_score or structure_score. Focus only on flow, topic relevance, and vocabulary.
+        {language_constraint}
+        
+        DO NOT provide content_score or structure_score. 
+        Focus only on flow, topic relevance (does it answer the specific prompt questions?), and vocabulary.
+        
         Output in JSON format with:
-        - "overall_feedback": Feedback on paragraph cohesion and relevance to the topic.
+        - "overall_feedback": Feedback on paragraph cohesion and relevance to the specific prompt questions.
         - "vocabulary_upgrades": A list containing "original", "advanced", and "reason".
         """
         
@@ -80,16 +102,18 @@ def run_logic_agent(corrected_text, is_full_essay, essay_topic=""):
     )
     return json.loads(response.text)
 
-def run_topik_pipeline(draft_text, essay_topic=""):
+
+def run_topik_pipeline(draft_text, exam_prompt="", feedback_lang="中文"):
     if not is_valid_korean(draft_text):
         raise ValueError("Input text does not contain enough Korean characters.")
     
     char_count = len(draft_text.strip())
     is_full_essay = char_count >= 400
         
-    grammar_result = run_grammar_agent(draft_text)
+    grammar_result = run_grammar_agent(draft_text, feedback_lang)
     clean_text = grammar_result["corrected_text"]
-    logic_result = run_logic_agent(clean_text, is_full_essay, essay_topic)
+    
+    logic_result = run_logic_agent(clean_text, is_full_essay, exam_prompt, feedback_lang)
     
     return {
         "original_text": draft_text,
