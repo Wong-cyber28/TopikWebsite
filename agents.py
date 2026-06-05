@@ -21,7 +21,7 @@ def is_valid_korean(text, min_ratio=0.3):
 
 def run_grammar_agent(user_text, feedback_lang="中文"):
     sys_prompt = f"""
-    You are a STRICT TOPIK evaluator grading the 'Language Use' section.
+    You are a STRICT TOPIK evaluator grading the 'Language Use' (언어 사용) section.
     Check for spelling, spacing, and grammar errors. Convert to 한다/ㄴ다/다 form.
     
     [IMPORTANT] 
@@ -32,7 +32,7 @@ def run_grammar_agent(user_text, feedback_lang="中文"):
     CRITICAL SCORING RUBRIC (Max 20):
     - Start at 20. Deduct 1-2 points per basic grammar/spacing error.
     - Deduct 5 points immediately if speech levels (해요/습니다) are mixed.
-    - 🚨 HOLISTIC PENALTY: If the text relies heavily on elementary vocabulary (e.g., 많이, 먹다, 좋다) or lacks complex sentence structures, CAP the score at 10/20 maximum.
+    - 🚨 ACADEMIC LANGUAGE PENALTY (고급 어휘/문법 제한): TOPIK Q54 strictly requires Level 6 advanced vocabulary (한자어) and complex sentence structures. Even if there are ZERO grammar/spelling mistakes, if the text relies on simple intermediate expressions (e.g., 나쁜 영향을 미친다, 건강에 좋지 않다, 많아지기 때문이다) instead of formal academic structures (e.g., 악영향을 초래한다, 건강을 해칠 우려가 있다, 증가하기 마련이다), you MUST CAP the language_score at 12/20 maximum.
     
     Output in JSON format with:
     - "corrected_text": The fully corrected Korean text.
@@ -62,19 +62,21 @@ def run_logic_agent(corrected_text, is_full_essay, exam_prompt="", feedback_lang
 
     if is_full_essay:
         sys_prompt = f"""
-        You are a strict professor evaluating a COMPLETE TOPIK II Q54 essay based on 'All About TOPIK Writing' criteria[cite: 1].
+        You are a merciless senior professor evaluating a COMPLETE TOPIK II Q54 essay based on 'All About TOPIK Writing' criteria.
         {topic_instruction}
         {language_constraint}
         
         [CRITICAL SCORING RUBRIC]
-        - Content (Max 15): 🚨 MANDATORY CHECK: Did the writer explicitly answer EVERY specific guiding question provided in the exam prompt? If any question is ignored, heavily penalize the content_score.
-        - Structure (Max 15): Paragraph cohesion and logical flow[cite: 1].
-        - Use 50-point scale for full essays[cite: 1].
+        - Content (Max 15): 🚨 MANDATORY CHECK: Did they explicitly answer EVERY guiding question? 
+          🚨 ACADEMIC DEPTH PENALTY (CRITICAL): TOPIK Q54 strictly requires Level 5-6 academic depth (sociological/psychological analysis). If the essay uses basic everyday logic (e.g., "운동하면 기분이 좋다", "돈이 없어서 힘들다", "스트레스 받으면 싸운다"), it is a Level 3/4 essay. You MUST CAP the content_score at a maximum of 8/15.
+        - Structure (Max 15): Paragraph cohesion and logical flow.
+          🚨 ADVANCED TRANSITION PENALTY: If the essay relies on elementary conjunctions (e.g., 그래서, 그리고, 먼저) instead of advanced cohesive devices, strictly CAP the structure_score at a maximum of 8/15.
+        - Use 50-point scale for full essays.
         
         Output in JSON format with:
         - "content_score": A strict score out of 15.
         - "structure_score": A strict score out of 15.
-        - "overall_feedback": Harsh, constructive feedback. Explicitly state if they missed answering any specific questions from the prompt.
+        - "overall_feedback": Harsh, constructive feedback. Explicitly tear down their childish logic if it sounds like a Level 3 essay instead of a Level 6 academic paper. MUST BE IN {feedback_lang}.
         - "vocabulary_upgrades": A list containing "original", "advanced", and "reason".
         """
     else:
