@@ -127,7 +127,7 @@ with tab_eval:
         feedback_lang = st.selectbox(t["fb_lang_label"], ["中文", "English", "한국어"])
         
     with col_btn:
-        st.write("") ！
+        st.write("") 
         submit_clicked = st.button(t["eval_btn"], type="primary", use_container_width=True)
 
     if submit_clicked:
