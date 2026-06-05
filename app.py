@@ -3,6 +3,8 @@ from agents import run_topik_pipeline, is_valid_korean
 import database
 import pandas as pd
 
+database.init_db()
+
 UI_TEXT = {
     "中文": {
         "title": "🎓 TOPIK II 写作智能评估",
@@ -30,7 +32,8 @@ UI_TEXT = {
         "dash_vocab_title": "📚 专属高级词库",
         "dash_vocab_empty": "你的错题词汇本还是空的。",
         "hist_cols": {"total": "总分", "grammar": "语法", "content": "内容", "structure": "结构"},
-        "vocab_cols": ["初级词汇", "高级替换", "教授解析", "记录时间"]
+        "vocab_cols": ["初级词汇", "高级替换", "教授解析", "记录时间"],
+        "dash_no_user": "👈 请先在左侧侧边栏输入您的【专属昵称】，再查看个人面板！"
     },
     "English": {
         "title": "🎓 TOPIK II Essay Evaluator",
@@ -58,7 +61,8 @@ UI_TEXT = {
         "dash_vocab_title": "📚 My Advanced Vocab Bank",
         "dash_vocab_empty": "Your vocab bank is currently empty.",
         "hist_cols": {"total": "Total Score", "grammar": "Grammar", "content": "Content", "structure": "Structure"},
-        "vocab_cols": ["Original", "Advanced", "Reason", "Date"]
+        "vocab_cols": ["Original", "Advanced", "Reason", "Date"],
+        "dash_no_user": "👈 Please enter your 【Nickname】 in the left sidebar first to view your dashboard!"
     },
     "한국어": {
         "title": "🎓 TOPIK II 쓰기 평가 시스템",
@@ -86,7 +90,8 @@ UI_TEXT = {
         "dash_vocab_title": "📚 나만의 고급 어휘장",
         "dash_vocab_empty": "아직 저장된 어휘가 없습니다.",
         "hist_cols": {"total": "총점", "grammar": "언어(문법)", "content": "내용", "structure": "구성"},
-        "vocab_cols": ["기존 어휘", "고급 어휘", "교수님 피드백", "날짜"]
+        "vocab_cols": ["기존 어휘", "고급 어휘", "교수님 피드백", "날짜"],
+        "dash_no_user": "👈 대시보드를 보려면 먼저 왼쪽 사이드바에 【닉네임】을 입력해 주세요!"
     }
 }
 st.sidebar.markdown("### 🌐 Interface Language")
@@ -97,7 +102,7 @@ t = UI_TEXT[ui_lang]
 st.sidebar.divider()
 
 st.sidebar.markdown(t["sidebar_profile"])
-current_user = st.sidebar.text_input(t["nickname"], value="SNU_Student")
+current_user = st.sidebar.text_input(t["nickname"])
 
 st.sidebar.divider()
 
@@ -213,33 +218,36 @@ with tab_eval:
                     st.error(f"An error occurred during evaluation: {e}")
 
 with tab_dashboard:
-    st.markdown(t["dash_welcome"].format(current_user=current_user))
+    if not current_user.strip():
+        st.warning(t["dash_no_user"])
+    else:
+        st.markdown(t["dash_welcome"].format(current_user=current_user))
 
-    history_data = database.get_user_history(current_user)
-    vocab_data = database.get_user_vocabulary(current_user)
-    
-    st.subheader(t["dash_chart_title"])
-    if history_data:
-        df_history = pd.DataFrame(history_data, columns=["Date", "Grammar", "Content", "Structure"])
-        df_history["Total Score"] = df_history["Grammar"] + df_history["Content"] + df_history["Structure"]
-        df_history.set_index("Date", inplace=True)
+        history_data = database.get_user_history(current_user)
+        vocab_data = database.get_user_vocabulary(current_user)
         
-        df_history.rename(columns={
-            "Total Score": t["hist_cols"]["total"],
-            "Grammar": t["hist_cols"]["grammar"],
-            "Content": t["hist_cols"]["content"],
-            "Structure": t["hist_cols"]["structure"]
-        }, inplace=True)
+        st.subheader(t["dash_chart_title"])
+        if history_data:
+            df_history = pd.DataFrame(history_data, columns=["Date", "Grammar", "Content", "Structure"])
+            df_history["Total Score"] = df_history["Grammar"] + df_history["Content"] + df_history["Structure"]
+            df_history.set_index("Date", inplace=True)
+            
+            df_history.rename(columns={
+                "Total Score": t["hist_cols"]["total"],
+                "Grammar": t["hist_cols"]["grammar"],
+                "Content": t["hist_cols"]["content"],
+                "Structure": t["hist_cols"]["structure"]
+            }, inplace=True)
+            
+            st.line_chart(df_history[[t["hist_cols"]["total"], t["hist_cols"]["grammar"], t["hist_cols"]["content"], t["hist_cols"]["structure"]]])
+        else:
+            st.info(t["dash_chart_empty"])
+            
+        st.divider()
         
-        st.line_chart(df_history[[t["hist_cols"]["total"], t["hist_cols"]["grammar"], t["hist_cols"]["content"], t["hist_cols"]["structure"]]])
-    else:
-        st.info(t["dash_chart_empty"])
-        
-    st.divider()
-    
-    st.subheader(t["dash_vocab_title"])
-    if vocab_data:
-        df_vocab = pd.DataFrame(vocab_data, columns=t["vocab_cols"])
-        st.dataframe(df_vocab, use_container_width=True, hide_index=True)
-    else:
-        st.info(t["dash_vocab_empty"])
+        st.subheader(t["dash_vocab_title"])
+        if vocab_data:
+            df_vocab = pd.DataFrame(vocab_data, columns=t["vocab_cols"])
+            st.dataframe(df_vocab, use_container_width=True, hide_index=True)
+        else:
+            st.info(t["dash_vocab_empty"])
