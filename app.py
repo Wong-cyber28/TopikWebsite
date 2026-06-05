@@ -21,7 +21,7 @@ UI_TEXT = {
         "essay_placeholder": "在此输入您的作文 (至少 50 字符)...",
         "eval_btn": "🚀 立即评估",
         "fb_lang_label": "🗣️ 选择 AI 点评语言:",
-        # --- 下面是新增的 Dashboard 和 Tab 翻译 ---
+ 
         "tab_eval": "📝 评估系统",
         "tab_dash": "📊 专属面板",
         "dash_welcome": "## 欢迎回来, {current_user}! 🌟",
@@ -49,7 +49,7 @@ UI_TEXT = {
         "essay_placeholder": "Enter your Korean draft here (Minimum 50 characters)...",
         "eval_btn": "🚀 Evaluate Now",
         "fb_lang_label": "🗣️ AI Feedback Language:",
-        # --- Dashboard and Tab ---
+
         "tab_eval": "📝 Evaluation",
         "tab_dash": "📊 My Dashboard",
         "dash_welcome": "## Welcome back, {current_user}! 🌟",
@@ -77,7 +77,7 @@ UI_TEXT = {
         "essay_placeholder": "여기에 한국어 원고를 입력하세요 (최소 50자)...",
         "eval_btn": "🚀 평가 시작",
         "fb_lang_label": "🗣️ AI 피드백 언어:",
-        # --- Dashboard and Tab ---
+
         "tab_eval": "📝 평가 시스템",
         "tab_dash": "📊 내 대시보드",
         "dash_welcome": "## 환영합니다, {current_user}님! 🌟",
@@ -92,22 +92,17 @@ UI_TEXT = {
 st.sidebar.markdown("### 🌐 Interface Language")
 ui_lang = st.sidebar.selectbox("网页语言 (Language)", ["中文", "English", "한국어"], label_visibility="collapsed")
 
-# 取出对应语言的字典包（赋值给变量 t，方便下面调用）
 t = UI_TEXT[ui_lang]
 
 st.sidebar.divider()
 
-# 侧边栏：用户档案与免责声明
 st.sidebar.markdown(t["sidebar_profile"])
 current_user = st.sidebar.text_input(t["nickname"], value="SNU_Student")
 
 st.sidebar.divider()
-# 使用 st.sidebar.info 渲染一个漂亮的免责声明提示框
+
 st.sidebar.info(f"**{t['disclaimer_title']}**\n\n{t['disclaimer_text']}")
 
-# ==========================================
-# 🖥️ 第三步：渲染主界面 (使用变量 t 替换硬编码的文字)
-# ==========================================
 tab_eval, tab_dashboard = st.tabs(["📝 评估系统 (Evaluation)", "📊 专属面板 (My Dashboard)"])
 with tab_eval:
     st.markdown(f"## {t['title']}")
@@ -124,7 +119,7 @@ with tab_eval:
 
     st.markdown(t["essay_header"])
     user_input = st.text_area(t["essay_placeholder"], height=200, label_visibility="collapsed")
-    st.write("") # 增加一点垂直留白
+    st.write("") 
 
     col_btn, col_lang = st.columns([1, 1])
     
@@ -132,8 +127,7 @@ with tab_eval:
         feedback_lang = st.selectbox(t["fb_lang_label"], ["中文", "English", "한국어"])
         
     with col_btn:
-        st.write("") # 强行制造一点垂直空隙，让按钮和右边的下拉框对齐
-        # 捕捉点击动作，注意这里的按钮文字也是跟着字典翻译走的！
+        st.write("") ！
         submit_clicked = st.button(t["eval_btn"], type="primary", use_container_width=True)
 
     if submit_clicked:
@@ -165,7 +159,7 @@ with tab_eval:
                         'structure': results['logic'].get('structure_score', 0)
                     }
                     
-                    # 2. 提取评语和高级词汇表
+                
                     feedback = results['logic'].get('overall_feedback', '')
                     vocab_list = results['logic'].get('vocabulary_upgrades', [])
                     
@@ -219,7 +213,6 @@ with tab_eval:
                     st.error(f"An error occurred during evaluation: {e}")
 
 with tab_dashboard:
-    # 使用 .format() 把用户的名字动态填入翻译好的欢迎语中
     st.markdown(t["dash_welcome"].format(current_user=current_user))
 
     history_data = database.get_user_history(current_user)
@@ -227,12 +220,10 @@ with tab_dashboard:
     
     st.subheader(t["dash_chart_title"])
     if history_data:
-        # 画图表的数据处理
         df_history = pd.DataFrame(history_data, columns=["Date", "Grammar", "Content", "Structure"])
         df_history["Total Score"] = df_history["Grammar"] + df_history["Content"] + df_history["Structure"]
         df_history.set_index("Date", inplace=True)
         
-        # 将内部英文列名重命名为对应语言的表头，这样折线图的图例就会跟着语言变！
         df_history.rename(columns={
             "Total Score": t["hist_cols"]["total"],
             "Grammar": t["hist_cols"]["grammar"],
@@ -240,7 +231,6 @@ with tab_dashboard:
             "Structure": t["hist_cols"]["structure"]
         }, inplace=True)
         
-        # 使用翻译后的列名来画图
         st.line_chart(df_history[[t["hist_cols"]["total"], t["hist_cols"]["grammar"], t["hist_cols"]["content"], t["hist_cols"]["structure"]]])
     else:
         st.info(t["dash_chart_empty"])
@@ -249,7 +239,6 @@ with tab_dashboard:
     
     st.subheader(t["dash_vocab_title"])
     if vocab_data:
-        # 把词汇表的表头也直接换成字典里的数组
         df_vocab = pd.DataFrame(vocab_data, columns=t["vocab_cols"])
         st.dataframe(df_vocab, use_container_width=True, hide_index=True)
     else:
