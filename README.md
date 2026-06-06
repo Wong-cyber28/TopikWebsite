@@ -2,7 +2,7 @@
 
 AgentTOPIK is a full-stack, cloud-deployed intelligent grading and feedback platform designed specifically for the TOPIK II Question 54 (Academic Essay). Powered by a dual-agent LLM architecture, it provides automated, rubric-aligned evaluations, personalized vocabulary upgrades, and data-driven progress tracking.
 
-🌐 **Live Demo:** [AgentTopik Website](agenttopik.streamlit.app)
+🌐 **Live Demo:** [AgentTopik Website](https://agenttopik.streamlit.app)
 
 ---
 
