@@ -95,7 +95,7 @@ UI_TEXT = {
     }
 }
 st.sidebar.markdown("### 🌐 Interface Language")
-ui_lang = st.sidebar.selectbox("网页语言 (Language)", ["中文", "English", "한국어"], label_visibility="collapsed")
+ui_lang = st.sidebar.selectbox("网页语言 (Language)", ["English","中文", "한국어"], label_visibility="collapsed")
 
 t = UI_TEXT[ui_lang]
 
@@ -107,6 +107,24 @@ current_user = st.sidebar.text_input(t["nickname"])
 st.sidebar.divider()
 
 st.sidebar.info(f"**{t['disclaimer_title']}**\n\n{t['disclaimer_text']}")
+
+st.sidebar.divider()
+if ui_lang == "English":
+    st.sidebar.markdown("### 💌 Help Us Improve")
+    st.sidebar.write("Found a bug or have suggestions for the grading rubric? Let us know!")
+    fb_btn_text = "📝 Submit Feedback"
+elif ui_lang == "中文":
+    st.sidebar.markdown("### 💌 帮助我们改进")
+    st.sidebar.write("发现 Bug 或有更好的评分标准建议？请告诉我们，帮助未来更多考生！")
+    fb_btn_text = "📝 提交反馈表单"
+else:
+    st.sidebar.markdown("### 💌 시스템 개선 피드백")
+    st.sidebar.write("오류를 발견하셨거나 채점 기준에 대한 건의사항이 있으시면 알려주세요!")
+    fb_btn_text = "📝 피드백 제출하기"
+
+
+st.sidebar.link_button(fb_btn_text, "https://docs.google.com/forms/d/e/1FAIpQLSd_jiTJeT-KLez3kjkLOmnpa7fhCaXloZa4D_C9xRRQ0hn9nw/viewform?usp=publish-editor")
+
 
 tab_eval, tab_dashboard = st.tabs(["📝 评估系统 (Evaluation)", "📊 专属面板 (My Dashboard)"])
 with tab_eval:
@@ -129,7 +147,7 @@ with tab_eval:
     col_btn, col_lang = st.columns([1, 1])
     
     with col_lang:
-        feedback_lang = st.selectbox(t["fb_lang_label"], ["中文", "English", "한국어"])
+        feedback_lang = st.selectbox(t["fb_lang_label"], ["English", "中文",  "한국어"])
         
     with col_btn:
         st.write("") 
